@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 )
 
 type TunnelServer struct {
@@ -82,7 +83,7 @@ func (tunnelServer *TunnelServer) tunnelPacketProcessing(sess *TunnelSession, bu
 			fs.fsm = newFrontSessionManager()
 
 			listener := *fs.listener
-			port = string(listener.Addr().(*net.TCPAddr).Port)
+			port = strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 
 			fmt.Println(alias, "Tunnel open at", port)
 			sess.sendListenOk("localhost:" + port)
@@ -136,8 +137,11 @@ func (tunnelServer *TunnelServer) tunnelRecvProcessing(sess *TunnelSession) {
 			if sess.agentType == manager {
 				tunnelServer.sm.tunnelSessManager.remove(sess.sessid)
 
-				frontListener := *tunnelServer.sm.frontServerManager.get(sess.tunnelAlias).listener
-				frontListener.Close()
+				fs := tunnelServer.sm.frontServerManager.get(sess.tunnelAlias)
+				if fs != nil {
+					frontListener := *fs.listener
+					frontListener.Close()
+				}
 
 				tunnelServer.sm.frontServerManager.remove(sess.tunnelAlias)
 			}
