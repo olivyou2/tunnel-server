@@ -29,3 +29,14 @@ func (sess *TunnelSession) sendListenOk(host string) {
 
 	(*sess.conn).Write(pw.getBytes())
 }
+
+func (sess *TunnelSession) sendListenFailed(host string) {
+	bw := newBufferWriter()
+	bw.writeString("listenFailed")
+	bw.writeString(host)
+
+	pw := newBufferWriter()
+	pw.writeFixBuffer(bw.getBytes())
+
+	(*sess.conn).Write(pw.getBytes())
+}

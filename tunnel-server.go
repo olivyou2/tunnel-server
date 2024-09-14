@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 )
 
 type TunnelServer struct {
@@ -67,14 +66,26 @@ func (tunnelServer *TunnelServer) tunnelPacketProcessing(sess *TunnelSession, bu
 			alias := br.readString()
 			sess.tunnelAlias = alias
 
-			fs := createFrontServer(tunnelServer.sm, ":0", sess, alias)
+			port := br.readString()
+
+			if port == "" {
+				port = "0"
+			}
+
+			fs := createFrontServer(tunnelServer.sm, ":"+port, sess, alias)
+
+			if nil == fs {
+				sess.sendListenFailed("localhost:" + port)
+				return
+			}
+
 			fs.fsm = newFrontSessionManager()
 
 			listener := *fs.listener
-			port := listener.Addr().(*net.TCPAddr).Port
+			port = string(listener.Addr().(*net.TCPAddr).Port)
 
 			fmt.Println(alias, "Tunnel open at", port)
-			sess.sendListenOk("localhost:" + strconv.Itoa(port))
+			sess.sendListenOk("localhost:" + port)
 
 			go fs.accept()
 
